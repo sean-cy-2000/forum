@@ -2,9 +2,13 @@
   "name": "voting",
   "version": "1.0.0",
   "type": "module",
+  "jest": {
+    "transform": {}
+  },
   "main": "index.js",
   "scripts": {
     "start": "node src/app.js",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "dev": "nodemon src/app.js"
   },
   "keywords": [],
@@ -20,6 +24,9 @@
     "socket.io": "^4.8.0"
   },
   "devDependencies": {
-    "nodemon": "^3.1.7"
+    "@babel/preset-env": "^7.25.7",
+    "jest": "^29.7.0",
+    "nodemon": "^3.1.7",
+    "supertest": "^7.0.0"
   }
 }
