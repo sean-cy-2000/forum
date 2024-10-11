@@ -10,10 +10,13 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));  // 解析前端的 form
+app.use(express.urlencoded({ extended: true }));  // 解析前端的 form 需要用到的
 
 app.use('/user', userRoutes);
-app.use('/post', postRoutes);
+app.use('/post', postRoutes); // post指的是文章相關的路由，不是 POST 方法
+
+
+
 
 // 錯誤處理的全局中間件，如果 app.use 有四個參數，就會列為錯誤處理中間件。
 // 如果在處理 err 時使用 next(err)，就會觸發這個中間件。
