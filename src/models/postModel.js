@@ -1,6 +1,8 @@
 import mongoose from 'mongoose';
 
-const commentSchema = new mongoose.Schema({
+const {Schema} = mongoose;
+
+const commentSchema = new Schema({
     user: { type: Schema.Types.ObjectId, ref: 'user', required: true }, // 留言的人，引用User模型
     content: { type: String, required: true },          // 留言內容
 }, { timestamps: true });
@@ -13,7 +15,7 @@ Schema.Types.ObjectId 這是一種 mognodb 專屬的資料型態
 ref: 'user', 類似外鍵，可以在查詢時使用 populate() 方法，將 user 資料表的內容抓出來
 */
 
-const postSchema = new mongoose.Schema({
+const postSchema = new Schema({
     postOwnerId: { type: Schema.Types.ObjectId, ref: 'user', required: true }, // required 必填，如果填入 unique: true 代表在該資料表中是唯一的(一篇文章只能有一個作者)
     title: { type: String, required: true },        // 標題
     content: { type: String, required: true },      // 內容
