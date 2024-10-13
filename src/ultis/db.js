@@ -6,6 +6,7 @@ dotenv.config();
 const { URI, DB_NAME } = process.env;
 
 export async function connectDB() {
+  console.log('資料庫連線中...');
   try {
     await mongo.connect(URI, {
       dbName: DB_NAME

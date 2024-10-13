@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 const {Schema} = mongoose;
 
 const commentSchema = new Schema({
-    user: { type: Schema.Types.ObjectId, ref: 'user', required: true }, // 留言的人，引用User模型
+    commenter: { type: Schema.Types.ObjectId, ref: 'user', required: true }, // 留言的人，引用User模型
     content: { type: String, required: true },          // 留言內容
 }, { timestamps: true });
 /*
