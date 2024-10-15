@@ -3,12 +3,14 @@ import dotenv from 'dotenv';
 import { connectDB, closeDB } from './ultis/db.js';
 import userRoutes from './routes/userRoutes.js';
 import postRoutes from './routes/postRoutes.js';
+import cors from 'cors';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));  // 解析前端的 form 需要用到的
 

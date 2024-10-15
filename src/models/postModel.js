@@ -1,10 +1,15 @@
+import { type } from 'express/lib/response';
 import mongoose from 'mongoose';
 
-const {Schema} = mongoose;
+const { Schema } = mongoose;
 
 const commentSchema = new Schema({
     commenter: { type: Schema.Types.ObjectId, ref: 'user', required: true }, // 留言的人，引用User模型
     content: { type: String, required: true },          // 留言內容
+    parentComment: { type: Schema.Types.ObjectId, default: null },
+    isChild: { type: Boolean, default: false },
+    clildCount: { type: Number, default: 0 },
+    order: { type: Number, default: 0 }               // 該留言為子留言，這是它的排行
 }, { timestamps: true });
 /*
 { timestamps: true } 可以自動加上 createdAt 和 updatedAt 但只能在Schema最後面加，
@@ -13,6 +18,10 @@ const commentSchema = new Schema({
 Schema.Types.ObjectId 這是一種 mognodb 專屬的資料型態
 不屬於 js, ts 中的 number 或 string ，賦值時不須加上引號
 ref: 'user', 類似外鍵，可以在查詢時使用 populate() 方法，將 user 資料表的內容抓出來
+
+populate 的第一個參數必須是 Schema.Types.ObjectId 型態，第二個是要查訊的欄位名 
+會將欄位中查詢到的資料表的內容抓出來，併入 Schema.Types.ObjectId 中
+變成物件的形式，例如： { ObjectId: "ObjectId", account: "account" } 
 */
 
 const postSchema = new Schema({
@@ -21,7 +30,7 @@ const postSchema = new Schema({
     content: { type: String, required: true },      // 內容
     category: { type: String },         // 分類
     tags: [{ type: String }],   // 標籤，可以有多個
-    comments: [commentSchema],  // 在上面設定了 commentSchema ，包含留言者、留言內容、留言時間
+    comments: [commentSchema],  // 在上面設定了 commentSchema ，包含留言者、留言內容、留言時間....
     commentsCount: { type: Number, default: 0 },        // 留言數量
     likers: [{ type: Schema.Types.ObjectId, ref: 'user' }], // 按贊的人
     likersCount: { type: Number, default: 0 },            // 按贊的人數
