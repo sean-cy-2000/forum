@@ -72,7 +72,9 @@ export async function getOnePost(req, res) {
     const { postId } = req.params;
 
     try {
-        const postInfo = await postModel.findById(postId);
+        const postInfo = await postModel.findById(postId)
+            .populate('postOwnerId', 'account')
+            .populate('comments.commenter', 'account');
         if (!postInfo) {
             console.log("getPostInfo 錯誤, (在postController.js中)");
             return res.status(404).json({ message: "找不到指定的文章" });
@@ -80,7 +82,7 @@ export async function getOnePost(req, res) {
         return res.json({ message: "已獲取文章資訊", postInfo });
     } catch (err) {
         console.error(`function getPostInfo 發生錯誤：${err}`);
-        return res.status(500).json({ message: "刪除文章時發生錯誤", error: err.message });
+        return res.status(500).json({ message: "獲取文章時發生錯誤", error: err.message });
     }
 }
 

@@ -18,8 +18,6 @@ app.use('/user', userRoutes);
 app.use('/post', postRoutes); // post指的是文章相關的路由，不是 POST 方法
 
 
-
-
 // 錯誤處理的全局中間件，如果 app.use 有四個參數，就會列為錯誤處理中間件。
 // 如果在處理 err 時使用 next(err)，就會觸發這個中間件。
 app.use((err, req, res, next) => {
