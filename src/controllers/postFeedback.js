@@ -1,56 +1,52 @@
 import { postModel } from "../models/postModel.js"
+import { commentModel } from "../models/commentModel.js"
 
 
 // 留言功能
 export async function addComment(req, res) {
-    const { postId, parentCommentId } = req.params;
+    let { postId, parentCommentId, level } = req.params;
     const { content } = req.body;
-    const userId = req.userInfo.userId; //來自loginCheck.js
+    const commenterId = req.userInfo.userId; //來自loginCheck
 
-    if (!content || content.trim().length === 0) {
+    if (!content || content.trim().length === 0) {      // trim() 去除頭尾空格
         return res.status(400).json({ message: "評論內容不能為空" });
     }
+    const post = await postModel.findById(postId);
+    if (!post) {
+        console.log("addComment.js 中的 try{} 中的 if (!post)");
+        return res.status(404).json({ message: "文章不存在" });
+    }
 
+    //整理路由參數 (express 路由參數育社會以str傳遞)
+    parentCommentId = parentCommentId === '0' ? null :
+        (isNaN(parseInt(parentCommentId)) ? null : parentCommentId);
+    level = isNaN(parseInt(level)) ? 0 : parseInt(level);
+
+    if (level > 3) {  //應該不會遇到，會在前端就擋下來
+        console.log("嵌套次數大於3, 無法再嵌套留言");
+        return res.status(400).json({ message: "無法再嵌套留言" });
+    }
+
+    const Change = { comment: false, post: false };    //之後會用到
     try {
-        const post = await postModel.findById(postId);
-        let newComment;
-
-        if (!parentCommentId) { //parentCommentId 不存在，所以是一般留言
-            newComment = {
-                commenter: userId,
-                content,
-                isChild: false,
-                parentComment: null
-            }
-            post.comments.push(newComment);
-            post.commentsCount += 1;
-
-        } else {                //parentCommentId 存在，所以是子留言
-            newComment = {
-                commenter: userId,
-                content,
-                isChild: true,
-                parentComment: parentCommentId,
-                order: post.comments.find(a => a._id.toString() === parentCommentId).order + 1
-            }
-            post.comments.push(newComment);
-            post.commentsCount += 1;
-            post.comments.find(a => a._id.toString() === parentCommentId).clildCount += 1;
-
+        const newComment = new commentModel({ postId, parentCommentId, level, content, commenterId });
+        if (level > 0) {
+            await commentModel.findByIdAndUpdate(
+                parentCommentId,
+                { $inc: { childrenCount: 1, } },
+                { new: true, runValidators: true }
+            )
         }
 
-        await post.save();
-        return res.json({
-            message: "留言成功",
-            文章標題: post.title,
-            留言資訊: {
-                留言者: newComment.commenter.account,
-                留言內容: newComment.content,
-                父留言內容: parentCommentId ? post.comments.find(a => a._id.toString() === parentCommentId).content : null,
-                是否為子評論: newComment.isChild,
-                留言時間: newComment.createdAt
-            }
-        });
+        // 更新文章的總留言數
+        await postModel.findByIdAndUpdate(
+            postId,
+            { $inc: { commentsCount: 1 } },
+            { new: true, runValidators: true }
+        );
+
+        const newCommentInDb = await newComment.save();
+        return res.json({ message: "留言成功", newCommentInDb });
     } catch (err) {
         console.error(`addComment 發生錯誤：${err}`);
         res.status(500).json({ message: "留言失敗", error: err.message });

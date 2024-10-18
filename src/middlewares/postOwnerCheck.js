@@ -26,7 +26,7 @@ export const postOwnerCheck = async (req, res, next) => {
             return res.status(403).json({ message: "權限不足" });
         }
 
-        req.post = post;  // 將找到的 post 附加到 req 對象，以便後續使用
+        Object.assign(req, { post, access: true });
         next();
     } catch (err) {
         console.error("postOwnerCheck.js 發生錯誤:", err);

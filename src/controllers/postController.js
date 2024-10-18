@@ -12,7 +12,8 @@ export async function createPost(req, res) {
 
         return res.json({
             message: "以成功創建新文章",
-            newPostInDb // newPostInDb : newPostInDb
+            newPostInDb, // newPostInDb : newPostInDb
+            createPostTest: true
         })
     } catch (err) {
         console.error(`createPost 函數發生錯誤:${err}`);
@@ -42,7 +43,8 @@ export async function editPost(req, res) {
 
         return res.json({
             message: "文章已成功更新",
-            postWToEdit: postWToEdit //可簡化
+            postWToEdit: postWToEdit, //可簡化
+            editPostTest: true
         });
     } catch (err) {
         console.error(`postController.js 中的 editPost 發生錯誤：${err}`);
@@ -60,7 +62,7 @@ export async function deletePost(req, res) {
         if (!postWToDelete) {
             return res.status(404).json({ message: "找不到指定的文章" });
         }
-        return res.json({ message: "文章已成功刪除", postWToDelete });
+        return res.json({ message: "文章已成功刪除", postWToDelete, deletePostTest: true });
     } catch (err) {
         console.error(`刪除文章時發生錯誤：${err}`);
         return res.status(500).json({ message: "刪除文章時發生錯誤", error: err.message });
@@ -79,7 +81,7 @@ export async function getOnePost(req, res) {
             console.log("getPostInfo 錯誤, (在postController.js中)");
             return res.status(404).json({ message: "找不到指定的文章" });
         }
-        return res.json({ message: "已獲取文章資訊", postInfo });
+        return res.json({ message: "已獲取文章資訊", postInfo, getPostInfoTest: true });
     } catch (err) {
         console.error(`function getPostInfo 發生錯誤：${err}`);
         return res.status(500).json({ message: "獲取文章時發生錯誤", error: err.message });
@@ -90,7 +92,7 @@ export async function getOnePost(req, res) {
 export async function getAllPosts(req, res) {
     try {
         const posts = await postModel.find().sort({ createdAt: -1 }).limit(10);
-        res.json(posts);
+        res.json({posts, getAllPostsTest:true});
     } catch (err) {
         console.error(`getPosts 發生錯誤：${err}`);
         res.status(500).json({ message: "獲取文章失敗", error: err.message });
