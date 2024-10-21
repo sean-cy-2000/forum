@@ -61,3 +61,8 @@ export async function deleteUser(req, res) {
     res.status(500).json({ message: '伺服器錯誤' });
   }
 }
+
+export async function checkAccess(req, res) {
+  const { access } = req;
+  res.json({ access });
+}

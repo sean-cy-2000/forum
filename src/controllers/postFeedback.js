@@ -3,7 +3,7 @@ import { commentModel } from "../models/commentModel.js"
 
 // 留言功能
 export async function addComment(req, res) {
-    let { postId, parentCommentId, level } = req.params;
+    let { postId, parentCommentId } = req.params;
     const { content } = req.body;
     const commenterId = req.userInfo.userId;
 
@@ -15,22 +15,36 @@ export async function addComment(req, res) {
         return res.status(404).json({ message: "文章不存在" });
     }
 
-    parentCommentId = parentCommentId === '0' ? null : (isNaN(parseInt(parentCommentId)) ? null : parentCommentId);
-    level = isNaN(parseInt(level)) ? 0 : parseInt(level);
+    parentCommentId = (parentCommentId === '0' || parentCommentId === undefined) ? null : parentCommentId;
+    const parentComment = await commentModel.findById(parentCommentId);
 
-    if (level > 3) {
-        return res.status(400).json({ message: "無法再嵌套留言" });
+    let level = 0;
+    if (parentCommentId && parentCommentId !== '0') {
+        const parentComment = await commentModel.findById(parentCommentId);
+        if (!parentComment) {
+            return res.status(404).json({ message: "父評論不存在" });
+        }
+        level = parentComment.level + 1;
+        if (level > 3) { 
+            return res.status(400).json({ message: "無法再嵌套留言" });
+        }
     }
 
     try {
         const newComment = new commentModel({ postId, parentCommentId, level, content, commenterId });
-        if (level > 0) {
-            await commentModel.findByIdAndUpdate(parentCommentId, { $inc: { childrenCount: 1 } }, { new: true, runValidators: true });
+        const newCommentInDb = await newComment.save();
+        if (parentComment.level) {
+            await commentModel.findByIdAndUpdate(parentCommentId,
+                { $inc: { childrenCount: 1 } },
+                { new: true, runValidators: true }
+            );
         }
 
-        await postModel.findByIdAndUpdate(postId, { $inc: { commentsCount: 1 } }, { new: true, runValidators: true });
+        await postModel.findByIdAndUpdate(postId,
+            { $inc: { commentsCount: 1 } },
+            { new: true, runValidators: true }
+        );
 
-        const newCommentInDb = await newComment.save();
         return res.json({ message: "留言成功", newCommentInDb });
     } catch (err) {
         res.status(500).json({ message: "留言失敗", error: err.message });

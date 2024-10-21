@@ -12,10 +12,10 @@ route.delete("/deletePost/:postId", loginCheck, postOwnerCheck, deletePost);
 route.post("/addLike/:postId/", loginCheck, addLike);
 route.post("/addCollect/:postId/", loginCheck, addCollect);
 
-route.post("/addComment/:postId/:parentCommentId?/:level?", loginCheck, addComment);
+route.post("/addComment/:postId/:parentCommentId?", loginCheck, addComment);
 
-route.get("/getPosts", getAllPosts);
-route.get("/getPost/:postId", getPostInfo);
+route.get("/getAllPosts", getAllPosts);
+route.get("/getPostInfo/:postId", getPostInfo);
 route.get("/getComments/:postId", getComments);
 
 export default route;

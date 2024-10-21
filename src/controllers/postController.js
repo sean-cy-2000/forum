@@ -58,3 +58,35 @@ export async function getAllPosts(req, res) {
         res.status(500).json({ message: "無法取得文章", error: err.message });
     }
 }
+
+export async function getPostInfo(req, res) {
+    const { postId } = req.params;
+    const post = await postModel.findById(postId);
+    if (!post) {
+        return res.status(404).json({ message: "文章不存在" });
+    }
+    try {
+        res.json({
+            message: "成功獲取文章資訊",
+            post: {
+                title: post.title,
+                content: post.content,
+                category: post.category,
+                tags: post.tags,
+                commentsCount: post.commentsCount,
+                likersCount: post.likersCount,
+                collectorsCount: post.collectorsCount,
+                editAt: post.editAt,
+                createdAt: post.createdAt
+            }
+        });
+    } catch (err) {
+        console.log("getPostInfo失敗:", err);
+        res.status(500).json({ message: "無法獲取文章資訊", error: err.message });
+    }
+}
+
+export async function getComments(req, res) {
+    const { postId } = req.params;
+    const comments = commentModel.findById(postId)
+}
