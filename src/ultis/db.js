@@ -20,4 +20,3 @@ export async function connectDB() {
 export function closeDB() {
   return mongo.connection.close();
 }
-
