@@ -25,7 +25,7 @@ export async function addComment(req, res) {
             return res.status(404).json({ message: "父評論不存在" });
         }
         level = parentComment.level + 1;
-        if (level > 3) { 
+        if (level > 3) {
             return res.status(400).json({ message: "無法再嵌套留言" });
         }
     }
@@ -48,6 +48,21 @@ export async function addComment(req, res) {
         return res.json({ message: "留言成功", newCommentInDb });
     } catch (err) {
         res.status(500).json({ message: "留言失敗", error: err.message });
+    }
+}
+
+export async function deleteComment(req, res) {
+    const { postId, commentId } = req.params;
+    const { commnetAccess } = req.commnetAccess;
+    if (!postId || !commentId) res.status(404).json({ message: "文章或留言不存在" });
+    if(!commnetAccess) res.status().json({massage:"權限不足"});
+    try {
+        const deleteAllChildren = await commentModel.deleteMany({parentCommentId:commentId});
+        const deleteComment = await commentModel.delete(commentId);
+
+    }catch(err){
+        console.log("刪除失敗:",err);
+        res.json(500).json({massage:"刪除失敗", error:err});
     }
 }
 

@@ -1,8 +1,9 @@
-import { createPost, editPost, deletePost, getAllPosts, getPostInfo, getComments } from "../controllers/postController.js";
-import { addComment, addLike, addCollect } from "../controllers/postFeedback.js";
+import { createPost, editPost, deletePost, getAllPosts, getPostInfo } from "../controllers/postController.js";
+import { addComment,deleteComment, addLike, addCollect } from "../controllers/postFeedback.js";
 import { Router } from "express";
 import { loginCheck } from "../middlewares/loginCheck.js";
 import { postOwnerCheck } from "../middlewares/postOwnerCheck.js";
+import { accessCheck } from "../middlewares/accessCheck.js";
 
 const route = Router();
 
@@ -13,6 +14,7 @@ route.post("/addLike/:postId/", loginCheck, addLike);
 route.post("/addCollect/:postId/", loginCheck, addCollect);
 
 route.post("/addComment/:postId/:parentCommentId?", loginCheck, addComment);
+route.delete("/deleteComment/:postId/:commentId",loginCheck, accessCheck, deleteComment);
 
 route.get("/getAllPosts", getAllPosts);
 route.get("/getPostInfo/:postId", getPostInfo);
