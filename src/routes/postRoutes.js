@@ -18,6 +18,6 @@ route.delete("/deleteComment/:postId/:commentId",loginCheck, accessCheck, delete
 
 route.get("/getAllPosts", getAllPosts);
 route.get("/getPostInfo/:postId", getPostInfo);
-route.get("/getComments/:postId", getComments);
+// route.get("/getComments/:postId", getComments);
 
 export default route;

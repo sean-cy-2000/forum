@@ -15,27 +15,30 @@ export async function addComment(req, res) {
         return res.status(404).json({ message: "文章不存在" });
     }
 
-    parentCommentId = (parentCommentId === '0' || parentCommentId === undefined) ? null : parentCommentId;
-    const parentComment = await commentModel.findById(parentCommentId);
+    parentCommentId = (parentCommentId === '0' || parentCommentId === undefined) ? null : parentCommentId;  //把0以及undefined改為null
+    let parentComment = null, level = 0;
 
-    let level = 0;
-    if (parentCommentId && parentCommentId !== '0') {
-        const parentComment = await commentModel.findById(parentCommentId);
+    if (parentCommentId) {
+        parentComment = await commentModel.findById(parentCommentId);
         if (!parentComment) {
             return res.status(404).json({ message: "父評論不存在" });
         }
-        level = parentComment.level + 1;
-        if (level > 3) {
+        if (parentComment.level > 2) {
             return res.status(400).json({ message: "無法再嵌套留言" });
         }
+        level = parentComment.level + 1;
     }
 
     try {
         const newComment = new commentModel({ postId, parentCommentId, level, content, commenterId });
         const newCommentInDb = await newComment.save();
-        if (parentComment.level) {
-            await commentModel.findByIdAndUpdate(parentCommentId,
-                { $inc: { childrenCount: 1 } },
+        if (parentComment) {
+            await commentModel.findByIdAndUpdate(
+                parentCommentId,
+                {
+                    $inc: { childrenCount: 1 },
+                    $push: { childrenId: newCommentInDb._id }
+                },
                 { new: true, runValidators: true }
             );
         }
@@ -45,25 +48,110 @@ export async function addComment(req, res) {
             { new: true, runValidators: true }
         );
 
+        await updateAncestorDescendants(newComment._id, 1);
+
         return res.json({ message: "留言成功", newCommentInDb });
     } catch (err) {
         res.status(500).json({ message: "留言失敗", error: err.message });
     }
 }
 
+//更新所有祖先的後代數量
+async function updateAncestorDescendants(commentId, change) {
+    try {
+        let currentComment = await commentModel.findById(commentId);
+        if (!currentComment || !currentComment.parentCommentId) return;
+        const allAncestorId = [];
+        while (currentComment.parentCommentId) {
+            allAncestorId.push(currentComment.parentCommentId);
+            currentComment = await commentModel.findById(currentComment.parentCommentId);
+        }
+
+        if (allAncestorId.length > 0) {
+            await commentModel.updateMany(
+                { _id: { $in: allAncestorId } },
+                { $inc: { descendantsCount: change } },
+                { new: true }
+            );
+        }
+    } catch (err) {
+        console.log("更新祖先的後代數量失敗：", err);
+        throw err;
+    }
+}
+
 export async function deleteComment(req, res) {
     const { postId, commentId } = req.params;
-    const { commnetAccess } = req.commnetAccess;
-    if (!postId || !commentId) res.status(404).json({ message: "文章或留言不存在" });
-    if(!commnetAccess) res.status().json({massage:"權限不足"});
-    try {
-        const deleteAllChildren = await commentModel.deleteMany({parentCommentId:commentId});
-        const deleteComment = await commentModel.delete(commentId);
+    const { commentAccess } = req;
+    if (!postId || !commentId) return res.status(404).json({ message: "文章或留言不存在" });
+    if (!commentAccess) return res.status(403).json({ message: "權限不足" });
 
-    }catch(err){
-        console.log("刪除失敗:",err);
-        res.json(500).json({massage:"刪除失敗", error:err});
+    try {
+        const comment = await commentModel.findById(commentId);
+
+        if (!comment) return res.status(404).json({ message: "留言不存在" });
+
+        const descendantsId = await getArrWTDelete(comment);  //從下面的getArrWTDelete獲取要山除的id的陣列
+        if (descendantsId.length !== comment.descendantsCount) {
+            console.log("得到的子孫數量跟資料庫中的紀錄不符(來自deleteComment函數)");
+            return res.status(500).json({ message: "伺服器錯誤" });
+        }
+        descendantsId.push(commentId);          //把自己加入要刪除的陣列中
+
+        // 更新文章的評論數
+        await postModel.findByIdAndUpdate(
+            postId,
+            { $inc: { commentsCount: -descendantsId.length } },
+            { new: true }
+        );
+
+        // 更新父評論的子評論數
+        if (comment.parentCommentId) {
+            await commentModel.findByIdAndUpdate(
+                comment.parentCommentId,
+                {
+                    $inc: { childrenCount: -1 },  // 更新子評論數量
+                    $pull: { childrenId: commentId }  // 從childrenId數組中移除被刪除的評論ID
+                },
+                { new: true }
+            );
+        }
+
+        await updateAncestorDescendants(commentId, -descendantsId.length);  //來自上方，更改祖先留言的後代數量
+        await commentModel.deleteMany({ _id: { $in: descendantsId } });     //db.comments.deleteMany({ _id: { $in: [ObjectId("id1"), ObjectId("id2"), ObjectId("id3")] } })
+
+        return res.json({ message: "刪除成功" })
+    } catch (err) {
+        console.log("刪除失敗:", err);
+        return res.status(500).json({ message: "刪除失敗", error: err });
     }
+}
+
+//在deleteComment中獲取需要刪除的留言id的陣列
+async function getArrWTDelete(comment) {
+    let currentComment = comment;
+    const allChildren = [];
+
+    async function getAllChildren(theComment) {
+        if (!theComment) return;
+        try {
+            for (let childId of theComment?.childrenId ?? []) {    //childrenId陣列中的元素命名為childId，其中 ?. 以及 ?? 
+                if (!childId) continue;
+                allChildren.push(childId);
+
+                const childComment = await commentModel.findById(childId);  //搜尋子評論的childrenId陣列
+
+                if (childComment?.childrenId?.length > 0) await getAllChildren(childComment);
+            }
+        } catch (err) {
+            console.log("getArrWTDelete時發生錯誤:", err);
+            throw err;
+        }
+    }
+
+    await getAllChildren(currentComment);   //執行上面的 getAllChildren
+
+    return allChildren;
 }
 
 // 點贊功能

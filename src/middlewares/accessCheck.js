@@ -7,10 +7,10 @@ export async function accessCheck(req, res, next) {
 
     try {
         if (postId) {
-            req.postAccess = await postCheck(userId, postId);;
+            req.postAccess = await postCheck(userId, postId);
         }
         if (commentId) {
-            req.commentAccess = await commentCheck(userId, commentId);;
+            req.commentAccess = await commentCheck(userId, commentId);
         }
         next();
     } catch (err) {
