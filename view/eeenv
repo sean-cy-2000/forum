@@ -1,0 +1,6 @@
+URI=mongodb://forum_mongodb_user:mongodbpassword@localhost:27017/admin
+DB_NAME=forum
+
+max_level_of_comment=3
+
+JWT_KEY=ppppjwtkey
