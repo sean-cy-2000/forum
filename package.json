@@ -8,7 +8,6 @@
   "main": "index.js",
   "scripts": {
     "start": "node src/app.js",
-    "test": "mocha --timeout 10000 --experimental-modules --es-module-specifier-resolution=node",
     "dev": "nodemon src/app.js"
   },
   "keywords": [],
@@ -21,15 +20,11 @@
     "dotenv": "^16.4.5",
     "express": "^4.21.0",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.7.0",
-    "socket.io": "^4.8.0"
+    "mongoose": "^8.7.0"
   },
   "devDependencies": {
     "@babel/preset-env": "^7.25.7",
-    "chai": "^5.1.1",
     "esm": "^3.2.25",
-    "mocha": "^10.7.3",
-    "nodemon": "^3.1.7",
-    "supertest": "^7.0.0"
+    "nodemon": "^3.1.7"
   }
 }
