@@ -1,6 +1,8 @@
 import { commentModel } from '../models/commentModel.js';
 import { postModel } from '../models/postModel.js';
 
+//  用於檢查使用者對於文章或留言有沒有權限
+
 export async function accessCheck(req, res, next) {
     const { userId } = req.userInfo;
     const { postId, commentId } = req.params;

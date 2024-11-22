@@ -16,7 +16,7 @@ export async function registUser(req, res) {
 
     res.status(201).json({ message: '用戶註冊成功', test: true });
   } catch (err) {
-    res.status(500).json({ message: '伺服器錯誤' });
+    res.status(500).json({ message: '伺服器錯誤', error: err });
   }
 }
 
@@ -62,7 +62,7 @@ export async function deleteUser(req, res) {
   }
 }
 
-export async function checkAccess(req, res) {
-  const { access } = req;
-  res.json({ access });
-}
+// export async function checkAccess(req, res) {
+//   const { access } = req;
+//   res.json({ access });
+// }
