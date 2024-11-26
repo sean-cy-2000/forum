@@ -17,11 +17,8 @@ export async function loginCheck(req, res, next) {
     decoded 代表解碼後的資料，對應 loginUser 中寫入的：
     { userId: userInDB._id, account: userInDB.account }
     */
-
     req.userInfo = decoded;
-
     next();
-
   } catch (err) {
     return res.status(403).json({ message: 'Token 驗證錯誤：', err });
   }

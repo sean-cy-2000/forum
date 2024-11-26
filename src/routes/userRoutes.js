@@ -1,7 +1,6 @@
 import express from 'express';
-import { registUser, loginUser, getUserInfo, checkAccess, deleteUser } from '../controllers/userController.js';
+import { registUser, loginUser, getUserInfo, deleteUser } from '../controllers/userController.js';
 import { loginCheck } from '../middlewares/loginCheck.js';
-// import { postOwnerCheck } from '../middlewares/postOwnerCheck.js';
 
 const router = express.Router();
 
@@ -11,6 +10,5 @@ router.post('/login', loginUser);
 
 router.delete('/delete', loginCheck, deleteUser);
 router.get('/userInfo', loginCheck, getUserInfo);
-// router.get('/access/:postId', loginCheck, accessCheck, checkAccess);
 
 export default router;  //用defalt，這樣import時就不用加花括號

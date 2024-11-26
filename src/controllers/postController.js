@@ -21,7 +21,7 @@ export async function editPost(req, res) {
     const { postId } = req.params;
     const { title, content, category, tags } = req.body;
 
-    if(!req.postAccess)return res.status(403).json({message:"權限不足"});
+    if (!req.postAccess) return res.status(403).json({ message: "權限不足" });
 
     try {
         const postWToEdit = await postModel.findByIdAndUpdate(postId, { title, content, category, tags }, { new: true, runValidators: true });
@@ -40,9 +40,13 @@ export async function editPost(req, res) {
 export async function deletePost(req, res) {
     const { postId } = req.params;
 
-    if(!req.postAccess)return res.status(403).json({message:"權限不足"});
+    if (!req.postAccess) return res.status(403).json({ message: "權限不足" });
 
     try {
+        const dieComment = await commentModel.deleteMany(postId);
+        if (!dieComment) {
+            return res.status(404).json({ message: "刪除文章的留言失敗" });
+        }
         const postWToDelete = await postModel.findByIdAndDelete(postId);
         if (!postWToDelete) {
             return res.status(404).json({ message: "找不到指定的文章" });
