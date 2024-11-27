@@ -40,12 +40,10 @@ export async function loginUser(req, res) {
 }
 
 // 獲取用戶資訊
-export async function getUserInfo(req, res) {
+export async function getUserNmae(req, res) {
   try {
     const { userId, account } = req.userInfo;
-    const userInfo = await userModel.findOne({ _id: userId, account }).select('-password_hash');
-    if (!userInfo) return res.status(404).json({ message: '用戶不存在' });
-    return res.json({ message: "已獲取個人資料", userInfo, test: true });
+    return res.json({ message: "已獲取個人資料", userId, account, test: true });
   } catch (err) {
     return res.status(500).json({ message: "伺服器錯誤" });
   }
