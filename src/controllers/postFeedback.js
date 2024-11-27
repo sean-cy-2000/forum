@@ -242,7 +242,7 @@ export async function addLike(req, res) {
     const { idType, id } = req.params;
     const userId = req.userInfo.userId;
 
-    // lookup 語法
+    // lookup(查找) 語法
     const model = {
         'post': postModel,
         'comment': commentModel
@@ -254,7 +254,7 @@ export async function addLike(req, res) {
 
     try {
         const like = await model.findOneAndUpdate(
-            { _id: id, likers: { $ne: userId } },   // $ne: not equal的意思, userId不存在於likers. 多數版本: %nin(not in)
+            { _id: id, likers: { $ne: userId } },   // $ne: not equal的意思, userId不存在於likers. 多個變數的版本: %nin(not in)
             { $addToSet: { likers: userId }, $inc: { likersCount: 1 } },    // $addToset 不會讓原俗重複出現，pusj會
             { new: true, runValidators: true }
         );
