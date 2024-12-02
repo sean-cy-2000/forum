@@ -2,9 +2,6 @@
   "name": "voting",
   "version": "1.0.0",
   "type": "module",
-  "jest": {
-    "transform": {}
-  },
   "main": "index.js",
   "scripts": {
     "start": "node src/app.js",
@@ -23,7 +20,6 @@
     "mongoose": "^8.7.0"
   },
   "devDependencies": {
-    "@babel/preset-env": "^7.25.7",
     "esm": "^3.2.25",
     "nodemon": "^3.1.7"
   }

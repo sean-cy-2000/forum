@@ -1,4 +1,7 @@
-import { createPost, editPost, deletePost, getPosts } from "../controllers/postController.js";
+import {
+    createPost, editPost, deletePost, getPosts, getPostInfo,
+    getPostsCount, getChildrenComments, getLevel_0_Comments
+} from "../controllers/postController.js";
 import { addComment, deleteComment, addLike, addCollect, editComment } from "../controllers/postFeedback.js";
 import { Router } from "express";
 import { loginCheck } from "../middlewares/loginCheck.js";
@@ -21,9 +24,17 @@ route.delete("/deleteComment/:commentId", loginCheck, accessCheck, deleteComment
 route.put("/editComment/:commentId", loginCheck, accessCheck, editComment);
 
 // 獲取一定數量的文章(首頁)
-route.get("/getPosts/:sortBy/:limitSize/:direction/:tags?",getPosts);
+route.get("/getPosts/:sortBy/:limitSize/:page/:direction/:tags?", getPosts);
+// 獲取文章總數(首頁)
+route.get("/getPostsCount/:tags?", getPostsCount);
 
-// route.get("/getPostInfo/:postId", getPostInfo);
+// 獲取文章資訊(點進去文章頁面)
+route.get("/getPostInfo/:postId", getPostInfo);
+
+// 獲取level 0留言
+route.get("/getLevel_0_Comments/:postId", getLevel_0_Comments);
+// 獲取子留言
+route.get("/getChildrenComments/:commentId", getChildrenComments);
 
 
 export default route;

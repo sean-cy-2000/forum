@@ -40,10 +40,74 @@ export async function loginUser(req, res) {
 }
 
 // 獲取用戶資訊
-export async function getUserNmae(req, res) {
+export async function getUserInfo(req, res) {
   try {
-    const { userId, account } = req.userInfo;
-    return res.json({ message: "已獲取個人資料", userId, account, test: true });
+    const { userId } = req.userInfo;
+    const userInfo = await userModel
+      .findById(userId)
+      .select('account introduce createdAt');
+
+    if (!userInfo) {
+      return res.status(404).json({ message: "使用者不存在" });
+    }
+
+    return res.json({
+      message: "已獲取個人資料",
+      data: {
+        account: userInfo.account,
+        introduce: userInfo.introduce,
+        createdAt: userInfo.createdAt,
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "伺服器錯誤" });
+  }
+}
+
+
+// 獲取某用戶的account
+export async function getUserAccount(req, res) {
+  const { userId } = req.params;
+  try {
+    const user = await userModel.findById(userId);
+    if (!user) return res.status(404).json({ message: '用戶不存在' });
+    return res.json({ message: "已獲取個人資料", account: user.account, test: true });
+  } catch (err) {
+    return res.status(500).json({ message: "伺服器錯誤" });
+  }
+}
+
+// 獲取用戶發表的文章
+export async function getMyPosts(req, res) {
+  const userId = req.userInfo.userId;
+  try {
+    const user = await userModel.findById(userId).populate('allPost', '_id title');
+    if (!user) return res.status(404).json({ message: '用戶不存在' });
+
+    const posts = user.allPost.map(post => ({
+      id: post._id,
+      title: post.title,
+    }));
+
+    return res.json({ message: "已獲取用戶發表的文章", posts });
+  } catch (err) {
+    return res.status(500).json({ message: "伺服器錯誤" });
+  }
+}
+
+export async function getMyCollects(req, res) {
+  const userId = req.userInfo.userId;
+  try {
+    const user = await userModel.findById(userId).populate('allCollect', '_id title');
+    if (!user) return res.status(404).json({ message: '用戶不存在' });
+
+    const posts = user.allCollect.map(post => ({
+      id: post._id,
+      title: post.title,
+    }));
+
+    return res.json({ message: "已獲取用戶收藏的文章", posts });
   } catch (err) {
     return res.status(500).json({ message: "伺服器錯誤" });
   }

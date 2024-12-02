@@ -1,5 +1,6 @@
 import { postModel } from "../models/postModel.js"
 import { commentModel } from "../models/commentModel.js"
+import { userModel } from "../models/userModel.js"
 
 // 獲取祖先留言
 async function getAncestors(currentCommentId) {
@@ -291,16 +292,26 @@ export async function addCollect(req, res) {
             { $addToSet: { collectors: userId }, $inc: { collectorsCount: 1 } },
             { new: true, runValidators: true }
         );
+        const userCollect = await userModel.findOneAndUpdate(
+            { _id: userId },
+            { $addToSet: { allCollect: postId } },
+            { new: true, runValidators: true }
+        );
 
-        if (collect) return res.json({ message: "收藏成功", collect });
+        if (collect) return res.json({ message: "收藏成功", collect, collector: userCollect.account });
 
         const uncollect = await postModel.findOneAndUpdate(
             { _id: postId, collectors: { $in: [userId] } },
             { $pull: { collectors: userId }, $inc: { collectorsCount: -1 } },
             { new: true, runValidators: true }
         );
+        const userUncollect = await userModel.findOneAndUpdate(
+            { _id: userId },
+            { $pull: { allCollect: postId } },
+            { new: true, runValidators: true }
+        );
 
-        if (uncollect) return res.json({ message: "取消收藏", uncollect });
+        if (uncollect) return res.json({ message: "取消收藏", uncollect, collector: userUncollect.account });
 
         return res.status(404).json({ message: "文章不存在" });
     } catch (err) {
