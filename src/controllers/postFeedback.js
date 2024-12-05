@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { postModel } from "../models/postModel.js"
 import { commentModel } from "../models/commentModel.js"
 import { userModel } from "../models/userModel.js"
@@ -26,17 +27,7 @@ async function getAncestors(currentCommentId) {
                     ancestors: "$ancestors._id"
                 }
             }
-        ]);/* 查詢到的結果大概會是：
-        {
-            _id: ObjectId("當前留言的id"),
-            ancestors: [
-                ObjectId("id 1"),
-                ObjectId("id 2"),
-                ObjectId("id 3"),
-                ObjectId("id 4")
-            ]
-            如果是level 0 之留言, ancestors會是空集合
-        }*/
+        ]);
         return allAncestors[0] || null; // allAncestors 會是一個陣列，理論上只會有一個值，所以加上[0]
     } catch (err) {
         console.log("獲取祖先留言失敗:", err);
@@ -46,39 +37,35 @@ async function getAncestors(currentCommentId) {
 
 // 獲取子孫留言
 async function getDescendants(currentCommentId) {
+    const currentComment = await commentModel.findById({ _id: currentCommentId });
+    if (!currentComment) { console.log("沒有子孫留言"); return []; }
+
     try {
         const allDescendants = await commentModel.aggregate([
-            { $match: { _id: currentCommentId } },
+            { $match: { _id: currentComment._id } },
             {
                 $graphLookup: {
                     from: "comments",
-                    startWith: "$childrenId",
-                    connectFromField: "childrenId",
-                    connectToField: "_id",
-                    as: "descendants"
+                    startWith: "$_id",
+                    connectFromField: "_id",
+                    connectToField: "parentCommentId",
+                    as: "descendants",
+                    maxDepth: 3,
                 }
             },
             {
                 $project: {
                     "descendants._id": 1
                 }
-            },
+            },  // 此時allDescendants: [{_id: "當前留言的id",descendants: [ { _id: id 1 }, {_id:id 2 }...]}] descendants陣列, 內部是物件
             {
                 $addFields: {
-                    descendants: "$descendants._id"
+                    descendants: "$descendants._id"  // $descendants._id 類似js中的 descendants.map(d => d._id)
                 }
-            }
-        ]);/* 查詢到的結果大概會是：
-        {
-            _id: ObjectId("當前留言的id"),
-            descendants: [
-                ObjectId("id 1"),
-                ObjectId("id 2"),
-                ObjectId("id 3"),
-                ObjectId("id 4")
-            ]
-        }*/
-        return allDescendants[0] || null;
+            }   // 輸出: [{_id: "當前留言的id",descendants: [ "id 1", "id 2" ]}]
+        ]);
+        const descendants = allDescendants[0]?.descendants || [];
+        return { descendants, descendantsCount: descendants.length }    // 返回 ["id 1", "id 2",... ] 以及子孫數量
     } catch (err) {
         console.log("獲取子孫留言失敗:", err);
         throw err;
@@ -86,31 +73,96 @@ async function getDescendants(currentCommentId) {
 }
 
 // 刪除所有子孫留言
-async function deleteAllDescendants(currentCommentId) {
+async function deleteDescendants(idsToDelete) {  // idsToDelete 是陣列，從getDescendants 中獲得
+    if (!idsToDelete || idsToDelete.length === 0) return { deletedCount: 0 };
+    const expecedCount = idsToDelete.length;    // 預期刪除的數量
+    const session = await mongoose.startSession();
+    session.startTransaction();
     try {
-        const arr = await getDescendants(currentCommentId);
-        if (!arr || !arr.descendants) {
-            return { deleteCount: 0, descendantsCount: 0 };
-            // 返回兩種值，預計刪除數量以及實際刪除數量
-            // 這裡都是零
+        const deleteResult = await commentModel.deleteMany({ _id: { $in: idsToDelete } });
+        if(deleteResult.deletedCount !== expecedCount) {
+            throw new Error("刪除留言數量與預期不符");
         }
+        await session.commitTransaction();
+        return { deletedCount: deleteResult.deletedCount };
 
-        const idToDelete = arr.descendants;
-        const descendantsCount = idToDelete.length;
-
-        const deleteResult = await commentModel.deleteMany({
-            _id: { $in: idToDelete }    // idToDelete 鎮列為目標，刪除
-        });
-
-        if (descendantsCount !== deleteResult.deletedCount) throw new Error("子孫留言預計刪除數量以及實際刪除數量不相等，(來自deleteAllDescendants的錯誤)");
-
-        return {
-            deleteCount: deleteResult.deletedCount, // 返回實際刪除數量，deletedCount 是mongodb內建語法
-            descendantsCount    // 返回兩種值，預計刪除數量以及實際刪除數量
-        };
     } catch (err) {
         console.log("刪除子孫留言失敗:", err);
+        await session.abortTransaction();
         throw err;
+    }finally {
+        await session.endSession();
+    }
+}
+
+export async function deleteComment(req, res) {
+    const { commentId } = req.params;
+    const currentComment = await commentModel.findById(commentId);
+    if (!currentComment) return res.status(404).json({ message: "留言不存在" });
+    if (!req.commentAccess) return res.status(403).json({ message: "權限不足" });
+
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+        const ancestors = await getAncestors(commentId);        // 獲取祖先留言
+        const descendantIds = await getDescendants(commentId);  // 子勳留言的陣列
+
+        const totalDeleteCount = descendantIds.length + 1;      // 子孫數量加上當前留言
+
+        // 更新祖先的子孫數量
+        if (ancestors?.ancestors?.length > 0) {
+            await commentModel.updateMany(
+                { _id: { $in: ancestors.ancestors } },
+                { $inc: { descendantsCount: -totalDeleteCount } },
+                { session }
+            );
+        }
+
+        // 如果有父留言，更新父留言的子留言資訊
+        if (currentComment.parentCommentId) {
+            await commentModel.findByIdAndUpdate(
+                currentComment.parentCommentId,
+                {
+                    $pull: { childrenId: commentId },
+                    $inc: { childrenCount: -1 }
+                },
+                { session }
+            );
+        }
+
+        // 刪除所有子孫留言
+        if (descendantIds.length > 0) {
+            const deleteResult = await deleteDescendants(descendantIds);
+            if (deleteResult.deletedCount !== descendantIds.length) {
+                throw new Error("子孫留言刪除數量與預期不符");
+            }
+        }
+
+        // 刪除當前留言
+        await commentModel.deleteOne(
+            { _id: commentId },
+            { session }
+        );
+
+        // 更新文章的留言總數
+        await postModel.findByIdAndUpdate(
+            currentComment.postId,
+            { $inc: { commentsCount: -totalDeleteCount } },
+            { session }
+        );
+
+        await session.commitTransaction();        
+        return res.json({
+            message: `留言id:${commentId} 已成功刪除, 加上其子孫留言總共刪除${totalDeleteCount}個`
+        });
+
+    } catch (err) {
+        await session.abortTransaction();
+        console.error("刪除留言失敗:", err);
+        res.status(500).json({ message: "刪除留言失敗", error: err.message });
+    } finally {
+        await session.endSession();
     }
 }
 
@@ -196,45 +248,6 @@ export async function addComment(req, res) {
         return res.json({ message: "留言成功", newComment });
     } catch (err) {
         res.status(500).json({ message: "留言失敗", error: err.message });
-    }
-}
-
-// 刪除留言
-export async function deleteComment(req, res) {
-    const { commentId } = req.params;
-
-    const currentComment = await commentModel.findById(commentId);
-    if (!currentComment) return res.status(404).json({ message: "留言不存在" });
-    if (!req.commentAccess) return res.status(403).json({ message: "權限不足" });
-
-    try {
-        const aa = await deleteAllDescendants(commentId);   //刪除子孫留言並取得實際刪除的數量
-        const totalDelete = -aa.deleteCount + 1;
-        //  deleteCount 來自 deleteAllDescendants函數中，原本是正數，現在要加上負號，還要加上1，代表下一行要刪除的當前留言本身
-        await commentModel.deleteOne({ _id: commentId });
-        await updateAllAncestors(commentId, totalDelete);
-        // 再把總共刪除的數量用 updateAllAncestors 更新所有祖先的「子孫總數」
-
-        if (currentComment.parentCommentId) {
-            await commentModel.findByIdAndUpdate(
-                currentComment.parentCommentId,
-                {
-                    $pull: { childrenId: commentId },
-                    $inc: { childrenCount: -1 } // 這是子留言陣列，而不是子孫總數
-                },
-                { new: true }
-            );
-        }
-        await postModel.findByIdAndUpdate(
-            currentComment.postId,
-            { $inc: { commentsCount: totalDelete } },
-            { new: true }
-        );
-
-        return res.json({ message: `留言id:${commentId} 已成功刪除, 加上其子孫留言總共刪除${aa.deleteCount + 1}個` })
-    } catch (err) {
-        console.error("刪除留言失敗:", err);
-        res.status(500).json({ message: "刪除留言失敗", err: err.message });
     }
 }
 

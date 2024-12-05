@@ -1,13 +1,13 @@
 import express from 'express';
 import {
-    registUser, loginUser, getUserInfo, deleteUser, getUserAccount,
+    registerUser, loginUser, getUserInfo, deleteUser, getUserAccount,
     getMyPosts, getMyCollects
 } from '../controllers/userController.js';
 import { loginCheck } from '../middlewares/loginCheck.js';
 
 const router = express.Router();
 
-router.post('/regist', registUser);
+router.post('/register', registerUser);
 router.post('/login', loginUser);
 //當客户端發送一個 POST 請求到 /register 或 /login 時，就會執行後面的程式
 

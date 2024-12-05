@@ -9,7 +9,6 @@ const commentSchema = new Schema({
     childrenId: [{ type: Schema.Types.ObjectId, ref: 'comment', default: null }],
     childrenCount: { type: Number, default: 0 },    //子留言數
     descendantsCount:{ type: Number, default: 0 },  //所有後代數量
-    order: { type: Number, default: 0 },        //在子留言中的排行
     content: { type: String, required: true },
     likers: [{ type: Schema.Types.ObjectId, ref: 'user' }], //按贊的人
     likersCount: { type: Number, default: 0 },            //按贊的人數

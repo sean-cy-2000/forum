@@ -50,13 +50,21 @@ export async function deletePost(req, res) {
     if (!req.postAccess) return res.status(403).json({ message: "權限不足" });
 
     try {
-        const dieComment = await commentModel.deleteOne({ postId });
+        const dieComment = await commentModel.deleteMany({ postId });
         if (!dieComment) {
             return res.status(404).json({ message: "刪除文章的留言失敗" });
         }
         const postWToDelete = await postModel.findByIdAndDelete(postId);
         if (!postWToDelete) {
             return res.status(404).json({ message: "找不到指定的文章" });
+        }
+        const postOwner = await userModel.findByIdAndUpdate(
+            postWToDelete.postOwnerId,
+            { $pull: { allPost: postWToDelete._id } },
+            { new: true }
+        )
+        if (!postOwner) {
+            return res.status(404).json({ message: "刪除文章的用戶失敗" });
         }
         return res.json({ message: "文章已成功刪除", postWToDelete, test: true });
     } catch (err) {
@@ -150,35 +158,23 @@ export async function getLevel_0_Comments(req, res) {
         const level0Comments = await commentModel
             .find({ postId, level: 0 })
             .populate('commenterId', 'account')
-            .select('content likersCount editAt createdAt')
+            .select('content level parentCommentId childrenId likersCount editAt createdAt')
             .lean();
-
-        const formattedComments = level0Comments.map(comment => ({
-            id: comment._id,
-            content: comment.content,
-            commenterAccount: comment.commenterId.account,
-            likesCount: comment.likersCount,
-            editAt: comment.editAt,
-            createdAt: comment.createdAt,
-            childrenCount: comment.childrenCount,
-            descendantsCount: comment.descendantsCount
-        }));
 
         res.json({
             message: "成功獲取頂層留言",
-            comments: formattedComments
+            comments: level0Comments
         });
     } catch (err) {
         res.status(500).json({ message: "無法獲取留言", error: err.message });
     }
 }
-
 // 獲取特定留言的所有子留言
 export async function getChildrenComments(req, res) {
     const { commentId } = req.params;
 
     try {
-        const descendants = await commentModel
+        const children = await commentModel
             .find({ parentCommentId: commentId })
             .populate('commenterId', 'account')
             .select('content level parentCommentId childrenId likersCount editAt createdAt')
@@ -186,7 +182,7 @@ export async function getChildrenComments(req, res) {
 
         res.json({
             message: "成功獲取子留言",
-            descendants: descendants
+            children: children    // 改成 children
         });
     } catch (err) {
         res.status(500).json({ message: "無法獲取子留言", error: err.message });

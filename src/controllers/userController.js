@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import { userModel } from '../models/userModel.js';
 
 // 註冊方法
-export async function registUser(req, res) {
+export async function registerUser(req, res) {
   const { account, password } = req.body;
 
   try {
