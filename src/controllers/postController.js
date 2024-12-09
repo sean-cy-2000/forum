@@ -188,3 +188,21 @@ export async function getChildrenComments(req, res) {
         res.status(500).json({ message: "無法獲取子留言", error: err.message });
     }
 }
+
+// 獲取特定留言
+export async function getCommentInfo(req, res) {
+    const { commentId } = req.params;
+    const comment = await commentModel.findById(commentId).populate('commenterId', 'account');
+    if (!comment) {
+        return res.status(404).json({ message: "留言不存在" });
+    }
+    try {
+        res.json({
+            message: "成功獲取留言資訊",
+            comment
+        });
+    } catch (err) {
+        console.log("getCommentInfo失敗:", err);
+        res.status(500).json({ message: "無法獲取留言資訊", error: err.message });
+    }
+}

@@ -33,7 +33,7 @@ export async function loginUser(req, res) {
 
     const token = jwt.sign({ userId: userInDB._id, account: userInDB.account }, process.env.JWT_KEY, { expiresIn: '1h' });
 
-    res.json({ message: '登錄成功', token, test: true });
+    res.json({ message: '登錄成功', token, account, test: true });
   } catch (err) {
     res.status(403).json({ message: '登入失敗' });
   }

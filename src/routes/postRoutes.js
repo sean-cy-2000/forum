@@ -1,6 +1,6 @@
 import {
     createPost, editPost, deletePost, getPosts, getPostInfo,
-    getPostsCount, getChildrenComments, getLevel_0_Comments
+    getPostsCount, getChildrenComments, getLevel_0_Comments, getCommentInfo
 } from "../controllers/postController.js";
 import { addComment, deleteComment, addLike, addCollect, editComment } from "../controllers/postFeedback.js";
 import { Router } from "express";
@@ -35,6 +35,8 @@ route.get("/getPostInfo/:postId", getPostInfo);
 route.get("/getLevel_0_Comments/:postId", getLevel_0_Comments);
 // 獲取子留言
 route.get("/getChildrenComments/:commentId", getChildrenComments);
+// 獲取特定留言
+route.get("/getCommentInfo/:commentId", getCommentInfo);
 
 
 export default route;
