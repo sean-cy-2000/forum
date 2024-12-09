@@ -10,7 +10,20 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());  //  允許所有請求
+const corsSetting = {
+  origin: [
+    'http://localhost:3000',          // 本機後端
+    'http://localhost:5500',          // Live Server
+    'http://127.0.0.1:5500',         // Live Server
+    'http://127.0.0.1:5501',         // Live Server
+    'https://sean-cy-2000.github.io' // GitHub.io
+  ],
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true  // 如果需要跨域請求時傳送 cookies
+};
+
+app.use(cors(corsSetting));
 app.use(express.json());      //  解析 Content-Type: application/json
 app.use(express.urlencoded({ extended: true }));  // 解析前端的 form 需要用到的
 
@@ -27,9 +40,7 @@ app.use((err, req, res, next) => {
 (async () => {
   try {
     await connectDB();
-    app.listen(PORT, () => {
-      console.log(`正在執行： http://localhost:${PORT}`);
-    });
+    app.listen(PORT, '0.0.0.0', () => { console.log(`正在執行： http://0.0.0.0:${PORT}`); });
   } catch (err) {
     console.error('連接伺服器失敗:', err);
   }
