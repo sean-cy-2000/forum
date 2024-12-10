@@ -7,6 +7,10 @@ import { loginCheck } from '../middlewares/loginCheck.js';
 
 const router = express.Router();
 
+router.get('/ec2', (req, res) => {
+    res.json({ message: 'ec2測試成功' });
+})
+
 router.post('/register', registerUser);
 router.post('/login', loginUser);
 //當客户端發送一個 POST 請求到 /register 或 /login 時，就會執行後面的程式
