@@ -4,19 +4,28 @@ import { connectDB, closeDB } from './ultis/db.js';
 import userRoutes from './routes/userRoutes.js';
 import postRoutes from './routes/postRoutes.js';
 import cors from 'cors';
+import https from 'https';
+import fs from 'fs';
 
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = 443;
+
+try {
+  var options = {
+    key: fs.readFileSync('/home/ubuntu/ssl/privkey.pem'),
+    cert: fs.readFileSync('/home/ubuntu/ssl/fullchain.pem')
+  };
+} catch (err) {
+  console.error('ssl錯誤:', err);
+}
 
 const corsSetting = {
   origin: [
-    'http://localhost:3000',          // 本機後端
-    'http://localhost:5500',
-    'http://127.0.0.1:5500',
-    'http://127.0.0.1:5501',
-    'https://sean-cy-2000.github.io' // GitHub.io
+    'https://localhost:5500',
+    'https://127.0.0.1:5500',
+    'https://sean-cy-2000.github.io'
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
@@ -40,7 +49,10 @@ app.use((err, req, res, next) => {
 (async () => {
   try {
     await connectDB();
-    app.listen(PORT, '0.0.0.0', () => { console.log(`正在執行： http://0.0.0.0:${PORT}`); });
+    const server = https.createServer(options, app);
+    server.listen(PORT, '0.0.0.0', () => {
+      console.log(`正在執行： https://0.0.0.0:${PORT}`);
+    });
   } catch (err) {
     console.error('連接伺服器失敗:', err);
   }
