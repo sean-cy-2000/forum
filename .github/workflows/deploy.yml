@@ -5,7 +5,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: env  # 這裡指定使用 env 環境
+    environment: env  # 這裡的 env 環境指的是config env
     steps:
       - uses: actions/checkout@v2
       

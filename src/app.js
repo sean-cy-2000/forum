@@ -12,13 +12,15 @@ dotenv.config();
 const app = express();
 const PORT = 443;
 
+let options;
 try {
-  var options = {
+  options = {
     key: fs.readFileSync('/home/ubuntu/ssl/privkey.pem'),
     cert: fs.readFileSync('/home/ubuntu/ssl/fullchain.pem')
   };
 } catch (err) {
-  console.error('ssl錯誤:', err);
+  console.error('SSL 錯誤:', err);
+  process.exit(1);
 }
 
 const corsSetting = {
@@ -48,13 +50,21 @@ app.use((err, req, res, next) => {
 
 (async () => {
   try {
+    console.log('資料庫連線中');
     await connectDB();
+    console.log('資料庫連線成功');
+    
     const server = https.createServer(options, app);
     server.listen(PORT, '0.0.0.0', () => {
       console.log(`正在執行： https://0.0.0.0:${PORT}`);
     });
+    server.on('error', (err) => {
+      console.error('伺服器錯誤:', err);
+      process.exit(1);
+    });
   } catch (err) {
     console.error('連接伺服器失敗:', err);
+    process.exit(1);
   }
 })();
 
