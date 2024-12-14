@@ -15,7 +15,7 @@ jobs:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script:
+          script: |
             pm2 stop forum || true
             pm2 delete forum || true
             cd ~/forum
