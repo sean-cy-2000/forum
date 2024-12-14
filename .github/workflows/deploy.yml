@@ -18,14 +18,7 @@ jobs:
           script:
             pm2 stop forum || true
             pm2 delete forum || true
-            cd ~
-            if [ ! -d forum ]; then
-                git clone git@github.com:sean-cy-2000/forum.git
-            fi
-            cd forum
+            cd ~/forum
             git pull origin main
             npm install
-            echo "DB_NAME=${{ secrets.DB_NAME }}" > .env
-            echo "JWT_KEY=${{ secrets.JWT_KEY }}" >> .env
-            echo "URI=${{ secrets.URI }}" >> .env
             authbind --deep pm2 start src/app.js --name forum
