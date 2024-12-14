@@ -24,7 +24,7 @@ route.delete("/deleteComment/:commentId", loginCheck, accessCheck, deleteComment
 route.put("/editComment/:commentId", loginCheck, accessCheck, editComment);
 
 // 獲取一定數量的文章(首頁)
-route.get("/getPosts/:sortBy/:limitSize/:page/:direction/:tags?", getPosts);
+route.get("/getPosts/:sortBy/:limitSize/:page/:direction/:title?", getPosts);
 // 獲取文章總數(首頁)
 route.get("/getPostsCount/:tags?", getPostsCount);
 
