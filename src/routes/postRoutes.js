@@ -26,7 +26,7 @@ route.put("/editComment/:commentId", loginCheck, accessCheck, editComment);
 // 獲取一定數量的文章(首頁)
 route.get("/getPosts/:sortBy/:limitSize/:page/:direction/:title?", getPosts);
 // 獲取文章總數(首頁)
-route.get("/getPostsCount/:tags?", getPostsCount);
+route.get("/getPostsCount/:title?", getPostsCount);
 
 // 獲取文章資訊(點進去文章頁面)
 route.get("/getPostInfo/:postId", getPostInfo);

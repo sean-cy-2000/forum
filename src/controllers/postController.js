@@ -74,13 +74,13 @@ export async function deletePost(req, res) {
 
 // 取得文章數量(首頁)
 export async function getPostsCount(req, res) {
-    let { tags } = req.params;
-    let searchTags = tags ? tags.split(',') : null;
+    let { title } = req.params;
+    let searchTitle_keyword = title ? title.trim() : null;
 
     try {
         const count = await postModel.countDocuments(
-            searchTags?.length ? {
-                tags: { $in: searchTags }
+            searchTitle_keyword?.length ? {
+                title: { $regex: searchTitle_keyword, $options: 'i' }
             } : {}
         );
         res.json({ message: "已成功取得文章數量", count });
@@ -91,12 +91,12 @@ export async function getPostsCount(req, res) {
 
 // 取得所有文章以及分頁(首頁)
 export async function getPosts(req, res) {
-    let { sortBy, limitSize, direction, tags, page } = req.params;
-    let searchTags = tags ? tags.split(',') : null;
-    page = Math.round(Number(page)) || 1;           // 預設為第 1 頁
-    limitSize = Math.round(Number(limitSize)) || 10;    // 預設一頁 10 篇文章 
+    let { sortBy, limitSize, direction, title, page } = req.params;
+    let searchTitle_keyword = title ? title.trim() : null;
+    page = Math.floor(Number(page)) || 1;           // 預設為第 1 頁
+    limitSize = Math.floor(Number(limitSize)) || 10;    // 預設一頁 10 篇文章 
     direction = Number(direction);
-    if ((direction !== 1 && direction !== -1) || !limitSize || limitSize <= 0)
+    if ((direction !== 1 && direction !== -1) || limitSize <= 0)  // 1 是升序 由小到大
         return res.status(403).json({ message: 'direction 或 limitSize 錯誤' });
     const sorByRange = ['commentsCount', 'createdAt', 'likersCount', 'collectorsCount'];
     if (!sorByRange.includes(sortBy)) {
@@ -106,8 +106,8 @@ export async function getPosts(req, res) {
 
     try {
         const posts = await postModel.find(
-            searchTags?.length ? {
-                tags: { $in: searchTags }
+            searchTitle_keyword?.length ? {
+                title: { $regex: searchTitle_keyword, $options: 'i' }
             } : {}
         )
             .select('_id postOwnerId title commentsCount likersCount collectorsCount createdAt')

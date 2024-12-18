@@ -6,9 +6,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     environment: env  # 這裡的 env 環境指的是config env
-    steps:
-      - uses: actions/checkout@v2
-      
+    steps:     
       - name: forum_CD
         uses: appleboy/ssh-action@master
         with:
@@ -21,4 +19,4 @@ jobs:
             cd ~/forum
             git pull origin main
             npm install
-            authbind --deep pm2 start src/app.js --name forum
+            pm2 start src/app.js --name forum
