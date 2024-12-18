@@ -4,36 +4,16 @@ import { connectDB } from './db/db.js';
 import userRoutes from './routes/userRoutes.js';
 import postRoutes from './routes/postRoutes.js';
 import cors from 'cors';
-import https from 'https';
-import fs from 'fs';
 
 dotenv.config();
-/////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////
-///////////////////////////  cd test 13       ///////////////////////
-/////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////
 
 const app = express();
-const PORT = 443;
-
-let options;
-try {
-  options = {
-    key: fs.readFileSync('/home/ubuntu/ssl/privkey.pem'),
-    cert: fs.readFileSync('/home/ubuntu/ssl/fullchain.pem')
-  };
-} catch (err) {
-  console.error('SSL 錯誤:', err);
-  process.exit(1);
-}
 
 const corsSetting = {
   origin: [
-    'https://localhost:5500',
-    'https://127.0.0.1:5500',
-    'https://sean-cy-2000.github.io'
+    'https://localhost',
+    'https://127.0.0.1',
+    'https://sean-cy-2000.github.io',
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
@@ -60,13 +40,8 @@ app.use((err, req, res, next) => {
     await connectDB();
     console.log('資料庫連線成功');
     
-    const server = https.createServer(options, app);
-    server.listen(PORT, '0.0.0.0', () => {
-      console.log(`正在執行： https://0.0.0.0:${PORT}`);
-    });
-    server.on('error', (err) => {
-      console.error('伺服器錯誤:', err);
-      process.exit(1);
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`正在執行： http://0.0.0.0:3000`);
     });
   } catch (err) {
     console.error('連接伺服器失敗:', err);
