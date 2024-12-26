@@ -14,7 +14,3 @@ export async function connectDB() {
     console.error('連接 MongoDB 失敗：', err.message);
   }
 }
-
-export function closeDB() {
-  return mongoose.connection.close();
-}
